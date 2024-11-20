@@ -7,7 +7,7 @@ import shippo
 from shippo.models import components
 import random as rand
 
-STORAGE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=customerdetailsungku;AccountKey=ZcAIsbgYd9DCysK7O6VnjWbSXZ43xgqzAt+FFLkpAyRNnZ/xTFnLMy9ZouqHfKasH3QdH4DSkh5j+ASt/pDw1w==;EndpointSuffix=core.windows.net"
+STORAGE_CONNECTION_STRING = os.environ["AzureWebJobsSTORAGE_CONNECTION_STRING"]
 CONTAINER_NAME = "customerdetails"
 shippo_sdk = shippo.Shippo(api_key_header="shippo_test_2ebb7faec745c14f4578a3b32905021023d53ac2")
 
@@ -17,7 +17,6 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 def stripe_receive(req: func.HttpRequest) -> func.HttpResponse:
     
     try:
-        logging.info(os.environ['SqlConnectionString'])
         logging.info("Received a request")
         req_body = req.get_json()
 
@@ -47,7 +46,7 @@ def stripe_receive(req: func.HttpRequest) -> func.HttpResponse:
             logging.info("Connected to blob storage")
 
             blob_client = container_client.get_blob_client(f"{id}.json")
-            blob_client.upload_blob(json.dumps(customer_data, indent=4))
+            blob_client.upload_blob(json.dumps(customer_data, indent=4, overwrite=True))
             logging.info("Data uploaded to blob storage")
 
         except Exception as e:
@@ -121,9 +120,9 @@ def easypost_send(myblob: func.InputStream):
 
         except Exception as e:
             logging.error(f"Error creating shipment: {e}")
-            return func.HttpResponse(status_code=500)
+            return func.HttpResponse(status_code=510)
 
     except Exception as e:
         logging.error(f"Error connecting to blob storage: {e}")
-        return func.HttpResponse(status_code=500)
+        return func.HttpResponse(status_code=520)
 
